@@ -91,6 +91,21 @@ Determine what to to:
 PROBLEM = !OK = (WARNING | CRITICAL | UNKONWN)
 RECOVERY = OK
 */
+$results = cachet_query('incidents?sort=id&order=asc&per_page=100');
+if ($result['code'] != 200) {
+  echo 'Can\'t get incidents' . "\n";
+  exit(1);
+}
+$cachet_incident_id = false;
+foreach ($results['body']->data as $incident) {
+  if (($incident->name == $incident_prefix . ' ' . $service_name) and ($incident->status != CACHET_STATUS_FIXED)) {
+    $cachet_incident_id = $incident->id;
+    break; // Yes, bad.
+  }
+}
+if ($service_status != 'OK' &&  $cachet_incident_id !== false) {
+  exit(0);
+}
 if ($service_status == 'WARNING' && ($service_status_type == 'SOFT' || $service_status_type == 'HARD')) { // Hope it will be back soon
   //echo 'KO SOFT: not doing anything' . "\n";
   //exit(0);
@@ -117,7 +132,7 @@ if ($service_status == 'WARNING' && ($service_status_type == 'SOFT' || $service_
     'status' => CACHET_STATUS_WATCHING,
     'visible' => $cachet_incident_visible,
     'component_id' => $cachet_component_id,
-  'component_status' => CACHET_COMPONENT_STATUS_PARTIAL_OUTAGE,
+    'component_status' => CACHET_COMPONENT_STATUS_PARTIAL_OUTAGE,
     'notify' => $cachet_notify_subscribers,
   );
   $result = cachet_query('incidents', 'POST', $query);
@@ -141,10 +156,10 @@ if ($service_status == 'WARNING' && ($service_status_type == 'SOFT' || $service_
     echo 'Can\'t create incident' . "\n";
     exit(1);
   }
-} elseif ($service_status == 'OK' && $service_status_type == 'SOFT') { // Recovery underway
-  echo 'OK SOFT: updating incident' . "\n";
+} elseif ($service_status == 'OK') { // Recovery underway
+  echo 'OK: updating incident' . "\n";
   /* Get the incident ID */
-  $results = cachet_query('incidents');
+  $results = cachet_query('incidents?sort=id&order=asc&per_page=100');
   if ($result['code'] != 200) {
     echo 'Can\'t get incidents' . "\n";
     exit(1);
@@ -153,47 +168,6 @@ if ($service_status == 'WARNING' && ($service_status_type == 'SOFT' || $service_
   foreach ($results['body']->data as $incident) {
     if (($incident->name == $incident_prefix . ' ' . $service_name) and ($incident->status != CACHET_STATUS_FIXED)) {
       $cachet_incident_id = $incident->id;
-      break; // Yes, bad.
-    }
-  }
-  if ($cachet_incident_id === false) {
-    echo 'Can\'t find incident "' . $incident_prefix . ' ' . $service_name . '"' . "\n";
-    exit(1);
-  }
-
-  /* Update the incident */
-  $query = array(
-    'message' => $service_output,
-    'status' => CACHET_STATUS_FIXED
-  );
-  $result = cachet_query('incidents/' . $cachet_incident_id, 'PUT', $query);
-  if ($result['code'] != 200) {
-    echo 'Can\'t update incident' . "\n";
-    exit(1);
-  }
-
-  /* Update the component */
-  $query = array(
-    'status' => CACHET_COMPONENT_STATUS_OPERATIONAL
-  );
-  $result = cachet_query('components/' . $cachet_component_id, 'PUT', $query);
-  if ($result['code'] != 200) {
-    echo 'Can\'t update component' . "\n";
-    exit(1);
-  }
-} elseif ($service_status == 'OK' && $service_status_type == 'HARD') { // Recovery completed
-  echo 'OK HARD: updating incident' . "\n";
-  /* Get the incident ID */
-  $results = cachet_query('incidents');
-  if ($result['code'] != 200) {
-    echo 'Can\'t get incidents' . "\n";
-    exit(1);
-  }
-  $cachet_incident_id = false;
-  foreach ($results['body']->data as $incident) {
-    if (($incident->name == $incident_prefix . ' ' . $service_name) and ($incident->status != CACHET_STATUS_FIXED)) {
-      $cachet_incident_id = $incident->id;
-      file_put_contents('/tmp/testing.txt', $cachet_incident_id . "\n" . $incident->id);
       break; // Yes, bad.
     }
   }
