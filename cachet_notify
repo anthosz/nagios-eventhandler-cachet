@@ -83,10 +83,8 @@ if ($cachet_component_id === false) {
 
 /*
 Determine what to to:
- - if PROBLEM and SOFT then don't cry just yet
  - if PROBLEM and HARD then create incident
- - if RECOVERY and SOFT then update incident
- - if RECOVERY and HARD then update incident
+ - if RECOVERY and SOFT or HARD then update incident
 
 PROBLEM = !OK = (WARNING | CRITICAL | UNKONWN)
 RECOVERY = OK
@@ -106,7 +104,7 @@ foreach ($results['body']->data as $incident) {
 if ($service_status != 'OK' &&  $cachet_incident_id !== false) {
   exit(0);
 }
-if ($service_status == 'WARNING' && ($service_status_type == 'SOFT' || $service_status_type == 'HARD')) { // Hope it will be back soon
+if ($service_status == 'WARNING' && $service_status_type == 'HARD') {
   //echo 'KO SOFT: not doing anything' . "\n";
   //exit(0);
   echo 'WARNING SOFT: creating incident' . "\n";
@@ -124,23 +122,7 @@ if ($service_status == 'WARNING' && ($service_status_type == 'SOFT' || $service_
     echo 'Can\'t create incident' . "\n";
     exit(1);
   }
-} elseif ($service_status == 'CRITICAL' && $service_status_type == 'SOFT') { // Something went wrong, let's notify
-  echo 'KO HARD: creating incident' . "\n";
-  $query = array(
-    'name' => $incident_prefix . ' ' . $service_name,
-    'message' => $service_output,
-    'status' => CACHET_STATUS_WATCHING,
-    'visible' => $cachet_incident_visible,
-    'component_id' => $cachet_component_id,
-    'component_status' => CACHET_COMPONENT_STATUS_PARTIAL_OUTAGE,
-    'notify' => $cachet_notify_subscribers,
-  );
-  $result = cachet_query('incidents', 'POST', $query);
-  if ($result['code'] != 200) {
-    echo 'Can\'t create incident' . "\n";
-    exit(1);
-  }
-} elseif ($service_status == 'CRITICAL' && $service_status_type == 'HARD') { // Something went wrong, let's notify
+} elseif ($service_status == 'CRITICAL' && $service_status_type == 'HARD') {
   echo 'KO HARD: creating incident' . "\n";
   $query = array(
     'name' => $incident_prefix . ' ' . $service_name,
