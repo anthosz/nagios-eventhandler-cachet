@@ -3,11 +3,16 @@
 
 if ($argc != 6) {
   echo 'Usage: ' . basename(__FILE__) . ' cachet_component service_name service_state service_state_type service_output' . "\n";
+  print_r($argv);
   exit(1);
 }
 
 $cachet_url = 'https://xxxxx/api/v1/';
 $api_key = 'xxxxx';
+$proxy_ip = 'xxxxx';
+$proxy_port = 'xxxxx';
+$proxy_user = 'xxxxx';
+$proxy_pass = 'xxxxx';
 
 $incident_prefix = '[Nagios]';
 $cachet_notify_subscribers = true; // Enable subscribers notifcation for incidents creation and updates
@@ -38,7 +43,10 @@ function cachet_query($api_part, $action = 'GET', $data = null) {
   curl_setopt($ch, CURLOPT_URL, $cachet_url . $api_part);
   curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
   curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-
+  curl_setopt($ch, CURLOPT_PROXY, $proxy_ip);
+  curl_setopt($ch, CURLOPT_PROXYPORT, $proxy_port);
+  curl_setopt($ch, CURLOPT_PROXYUSERPWD, "$proxy_user:$proxy_pass");
+  
   if (in_array($action, array('GET', 'POST', 'PUT'))) {
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $action);
   }
