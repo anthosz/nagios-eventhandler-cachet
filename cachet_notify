@@ -35,7 +35,7 @@ define('CACHET_COMPONENT_STATUS_PARTIAL_OUTAGE', 3);
 define('CACHET_COMPONENT_STATUS_MAJOR_OUTAGE', 4);
 
 function cachet_query($api_part, $action = 'GET', $data = null) {
-  global $api_key, $cachet_url;
+  global $api_key, $cachet_url, $proxy_ip, $proxy_port, $proxy_user, $proxy_pass;
 
   print_r($data);
 
@@ -46,7 +46,7 @@ function cachet_query($api_part, $action = 'GET', $data = null) {
   curl_setopt($ch, CURLOPT_PROXY, $proxy_ip);
   curl_setopt($ch, CURLOPT_PROXYPORT, $proxy_port);
   curl_setopt($ch, CURLOPT_PROXYUSERPWD, "$proxy_user:$proxy_pass");
-  
+
   if (in_array($action, array('GET', 'POST', 'PUT'))) {
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $action);
   }
@@ -72,7 +72,7 @@ function cachet_query($api_part, $action = 'GET', $data = null) {
 }
 
 /* Find Cachet component ID */
-$result = cachet_query('components');
+$result = cachet_query('components?sort=id&order=asc&per_page=200');
 if ($result['code'] != 200) {
   echo 'Can\'t query components' . "\n";
   exit(1);
@@ -97,7 +97,7 @@ Determine what to to:
 PROBLEM = !OK = (WARNING | CRITICAL | UNKONWN)
 RECOVERY = OK
 */
-$results = cachet_query('incidents?sort=id&order=asc&per_page=100');
+$results = cachet_query('incidents?sort=id&order=asc&per_page=200');
 if ($result['code'] != 200) {
   echo 'Can\'t get incidents' . "\n";
   exit(1);
@@ -149,7 +149,7 @@ if ($service_status == 'WARNING' && $service_status_type == 'HARD') {
 } elseif ($service_status == 'OK') { // Recovery underway
   echo 'OK: updating incident' . "\n";
   /* Get the incident ID */
-  $results = cachet_query('incidents?sort=id&order=asc&per_page=100');
+  $results = cachet_query('incidents?sort=id&order=asc&per_page=200');
   if ($result['code'] != 200) {
     echo 'Can\'t get incidents' . "\n";
     exit(1);
